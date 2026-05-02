@@ -1,5 +1,5 @@
 # Blackjack Monte Carlo Simulation
-**ZHAW — Probability Theory Semester Project FS26**
+**Probability Theory Semester Project FS26**
 
 ## Research Question
 Which Blackjack strategy survives the longest — and how likely is it 
