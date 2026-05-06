@@ -78,3 +78,36 @@ play_round <- function(strategy = "basic") {
 play_round("basic")
 play_round("random")
 play_round("basic")
+
+
+
+
+# step 4: simulate_player
+simulate_player <- function(strategy = "basic", 
+                            start_capital = 100, 
+                            bet = 5, 
+                            max_rounds = 200) {
+  
+  capital <- start_capital
+  rounds <- 0
+  
+  while (capital >= bet && rounds < max_rounds) {
+    
+    result <- play_round(strategy)
+    
+    if (result == "win") {
+      capital <- capital + 5
+    } else if (result == "loss") {
+      capital <- capital - 5
+    }
+    
+    rounds <- rounds + 1
+  }
+  
+  return(capital)
+}
+
+simulate_player("basic")
+simulate_player("random")
+simulate_player("basic")
+
