@@ -52,10 +52,29 @@ play_round <- function(strategy = "basic") {
     }
   }
   
-  # dealer logic: hits until 17 (done by teammate)
-  # ...
+  # dealer logic: hits until 17 
   
-  # compare and return result (done by teammate)
-  # ...
+  while (dealer_sum < 17) {
+    dealer_hand <- c(dealer_hand, sample(deck, 1))
+    dealer_sum  <- calculate_sum(dealer_hand)
+  }  
+
+  # result
   
+  if (player_sum > 21) {
+    return("loss")
+  } else if (dealer_sum > 21) {
+    return("win")
+  } else if (player_sum > dealer_sum) {
+    return("win")
+  } else if (dealer_sum > player_sum) {
+    return("loss")
+  } else {
+    return("draw")
+  }
 }
+
+
+play_round("basic")
+play_round("random")
+play_round("basic")
