@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Aisosa Omokaro &amp; Thiveja Thirukumar">
+<meta name="dcterms.date" content="2026-05-10">
+
+<title>Blackjack Strategies as a Simplified Bernoulli Model</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="blackjack_report_files/libs/clipboard/clipboard.min.js"></script>
+<script src="blackjack_report_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="blackjack_report_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="blackjack_report_files/libs/quarto-html/popper.min.js"></script>
+<script src="blackjack_report_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="blackjack_report_files/libs/quarto-html/anchor.min.js"></script>
+<link href="blackjack_report_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="blackjack_report_files/libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="blackjack_report_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="blackjack_report_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="blackjack_report_files/libs/bootstrap/bootstrap-8ffd5f67044e5306d9846f29df41dda5.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Inhaltsverzeichnis</h2>
+   
+  <ul>
+  <li><a href="#einleitung" id="toc-einleitung" class="nav-link active" data-scroll-target="#einleitung">1. Einleitung</a></li>
+  <li><a href="#modellbeschreibung" id="toc-modellbeschreibung" class="nav-link" data-scroll-target="#modellbeschreibung">2. Modellbeschreibung</a>
+  <ul class="collapse">
+  <li><a href="#blackjack-regeln-vereinfacht" id="toc-blackjack-regeln-vereinfacht" class="nav-link" data-scroll-target="#blackjack-regeln-vereinfacht">2.1 Blackjack-Regeln (vereinfacht)</a></li>
+  <li><a href="#modellannahmen" id="toc-modellannahmen" class="nav-link" data-scroll-target="#modellannahmen">2.2 Modellannahmen</a></li>
+  <li><a href="#strategien" id="toc-strategien" class="nav-link" data-scroll-target="#strategien">2.3 Strategien</a></li>
+  <li><a href="#verwendete-wahrscheinlichkeitsverteilungen" id="toc-verwendete-wahrscheinlichkeitsverteilungen" class="nav-link" data-scroll-target="#verwendete-wahrscheinlichkeitsverteilungen">2.4 Verwendete Wahrscheinlichkeitsverteilungen</a></li>
+  </ul></li>
+  <li><a href="#simulation" id="toc-simulation" class="nav-link" data-scroll-target="#simulation">3. Simulation</a>
+  <ul class="collapse">
+  <li><a href="#setup" id="toc-setup" class="nav-link" data-scroll-target="#setup">3.1 Setup</a></li>
+  <li><a href="#handsumme-berechnen" id="toc-handsumme-berechnen" class="nav-link" data-scroll-target="#handsumme-berechnen">3.2 Handsumme berechnen</a></li>
+  <li><a href="#eine-runde-spielen" id="toc-eine-runde-spielen" class="nav-link" data-scroll-target="#eine-runde-spielen">3.3 Eine Runde spielen</a></li>
+  <li><a href="#einen-spieler-simulieren" id="toc-einen-spieler-simulieren" class="nav-link" data-scroll-target="#einen-spieler-simulieren">3.4 Einen Spieler simulieren</a></li>
+  <li><a href="#monte-carlo-simulation" id="toc-monte-carlo-simulation" class="nav-link" data-scroll-target="#monte-carlo-simulation">3.5 Monte Carlo Simulation</a></li>
+  </ul></li>
+  <li><a href="#ergebnisse" id="toc-ergebnisse" class="nav-link" data-scroll-target="#ergebnisse">4. Ergebnisse</a>
+  <ul class="collapse">
+  <li><a href="#kennzahlen" id="toc-kennzahlen" class="nav-link" data-scroll-target="#kennzahlen">4.1 Kennzahlen</a></li>
+  <li><a href="#geschätzte-gewinnwahrscheinlichkeit-bernoulli-parameter-p" id="toc-geschätzte-gewinnwahrscheinlichkeit-bernoulli-parameter-p" class="nav-link" data-scroll-target="#geschätzte-gewinnwahrscheinlichkeit-bernoulli-parameter-p">4.2 Geschätzte Gewinnwahrscheinlichkeit (Bernoulli-Parameter p)</a></li>
+  <li><a href="#empirische-endkapitalverteilung" id="toc-empirische-endkapitalverteilung" class="nav-link" data-scroll-target="#empirische-endkapitalverteilung">4.3 Empirische Endkapitalverteilung</a></li>
+  <li><a href="#durchschnittlicher-kapitalverlauf" id="toc-durchschnittlicher-kapitalverlauf" class="nav-link" data-scroll-target="#durchschnittlicher-kapitalverlauf">4.4 Durchschnittlicher Kapitalverlauf</a></li>
+  </ul></li>
+  <li><a href="#fazit" id="toc-fazit" class="nav-link" data-scroll-target="#fazit">5. Fazit</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Blackjack Strategies as a Simplified Bernoulli Model</h1>
+<p class="subtitle lead">Semesterarbeit Wahrscheinlichkeitsrechnung FS26</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Aisosa Omokaro &amp; Thiveja Thirukumar </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 10, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="einleitung" class="level2">
+<h2 class="anchored" data-anchor-id="einleitung">1. Einleitung</h2>
+<p>Blackjack ist eines der beliebtesten Casinospiele der Welt. Im Gegensatz zu vielen anderen Glücksspielen hängt das Ergebnis nicht nur vom Zufall ab, sondern auch von den Entscheidungen des Spielers. Das wirft eine interessante Frage auf: Macht die gewählte Strategie langfristig wirklich einen Unterschied?</p>
+<p><strong>Fragestellung:</strong> <em>Welche vereinfachte Blackjack-Strategie erzielt über 200 Runden die höchste Gewinnwahrscheinlichkeit?</em></p>
+<p>Wir haben dieses Thema gewählt, weil es einen klar modellierbaren stochastischen Prozess darstellt. In unserem vereinfachten Modell wird jede Runde als binäres Zufallsexperiment behandelt, Gewinn oder Nicht-Gewinn und die Strategien werden anhand der geschätzten Gewinnwahrscheinlichkeit verglichen.</p>
+<hr>
+</section>
+<section id="modellbeschreibung" class="level2">
+<h2 class="anchored" data-anchor-id="modellbeschreibung">2. Modellbeschreibung</h2>
+<section id="blackjack-regeln-vereinfacht" class="level3">
+<h3 class="anchored" data-anchor-id="blackjack-regeln-vereinfacht">2.1 Blackjack-Regeln (vereinfacht)</h3>
+<p>Wir simulieren eine vereinfachte Version von Blackjack mit folgenden Regeln:</p>
+<ul>
+<li>Ein Standard-Kartendeck mit 52 Karten wird verwendet (4 Farben × 13 Werte)</li>
+<li>Kartenwerte: 2–9 = Zahlenwert, 10/Bube/Dame/König = 10, Ass = 11 (oder 1 bei Bust)</li>
+<li>Der Dealer zieht immer bis er mindestens 17 Punkte erreicht</li>
+<li>Kein Splitten, kein Verdoppeln, keine Versicherung</li>
+</ul>
+</section>
+<section id="modellannahmen" class="level3">
+<h3 class="anchored" data-anchor-id="modellannahmen">2.2 Modellannahmen</h3>
+<p>Zur Vereinfachung der Simulation haben wir folgende Annahmen getroffen:</p>
+<ul>
+<li><strong>Unabhängiges Kartenziehen:</strong> Jede Karte wird unabhängig aus dem vollständigen Deck gezogen. Wir führen kein fortlaufendes Deck — dies ist eine bewusste Vereinfachung, die den Vergleich zwischen Strategien nicht wesentlich beeinflusst.</li>
+<li><strong>Kein Blackjack-Bonus:</strong> Ein natürliches Blackjack (21 mit 2 Karten) wird 1:1 ausbezahlt, nicht 3:2.</li>
+<li><strong>Fixer Einsatz:</strong> Jeder Spieler setzt CHF 5 pro Runde (ausser Martingale).</li>
+<li><strong>Binärer Rundenausgang:</strong> Jede Runde wird auf zwei Ausgänge reduziert: Gewinn (1) oder Nicht-Gewinn (0). Unentschieden zählt als Nicht-Gewinn. Dies ist eine bewusste Vereinfachung, die eine klare Bernoulli-Modellierung ermöglicht.</li>
+<li><strong>Fixe Rundenzahl:</strong> Jeder Spieler spielt genau 200 Runden.</li>
+</ul>
+</section>
+<section id="strategien" class="level3">
+<h3 class="anchored" data-anchor-id="strategien">2.3 Strategien</h3>
+<p>Wir vergleichen vier Strategien:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Strategie</th>
+<th>Beschreibung</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Basic</strong></td>
+<td>Hit wenn Summe &lt; 17, Stand ab 17</td>
+</tr>
+<tr class="even">
+<td><strong>Aggressive</strong></td>
+<td>Hit wenn Summe &lt; 19, Stand ab 19</td>
+</tr>
+<tr class="odd">
+<td><strong>Random</strong></td>
+<td>Hit oder Stand zufällig (50/50) — Vergleichsstrategie</td>
+</tr>
+<tr class="even">
+<td><strong>Martingale</strong></td>
+<td>Basic Hit/Stand; Einsatz nach Verlust verdoppeln, nach Gewinn zurücksetzen</td>
+</tr>
+</tbody>
+</table>
+<p>Martingale ist keine Spielstrategie im engeren Sinn, sondern eine Einsatzstrategie. Die Hit/Stand-Entscheidungen entsprechen Basic; nur die Einsatzhöhe ändert sich.</p>
+</section>
+<section id="verwendete-wahrscheinlichkeitsverteilungen" class="level3">
+<h3 class="anchored" data-anchor-id="verwendete-wahrscheinlichkeitsverteilungen">2.4 Verwendete Wahrscheinlichkeitsverteilungen</h3>
+<p>Unser vereinfachtes Modell basiert hauptsächlich auf Bernoulli-Versuchen.</p>
+<p><strong>Bernoulli-Verteilung</strong> Jede Runde wird als Zufallsexperiment mit zwei möglichen Ausgängen modelliert: Gewinn (1) oder Nicht-Gewinn (0). Für jede Strategie schätzen wir die Erfolgswahrscheinlichkeit <span class="math inline">\(p\)</span> empirisch aus den simulierten Runden. Die Anzahl Gewinne in 200 Runden lässt sich damit als Summe vieler Bernoulli-Versuche interpretieren.</p>
+<p><strong>Empirische Endkapitalverteilung</strong> Das Endkapital nach 200 Runden wird als empirische Verteilung aus der Simulation ausgewertet. Für Strategien mit fixem Einsatz kann diese Verteilung annähernd glockenförmig wirken — wir behandeln sie jedoch bewusst als empirische Verteilung und nicht als exakt normalverteilt.</p>
+<hr>
+</section>
+</section>
+<section id="simulation" class="level2">
+<h2 class="anchored" data-anchor-id="simulation">3. Simulation</h2>
+<section id="setup" class="level3">
+<h3 class="anchored" data-anchor-id="setup">3.1 Setup</h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code anzeigen</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Schritt 1: Deck erstellen</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>one_suit <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>, <span class="dv">10</span>, <span class="dv">10</span>, <span class="dv">10</span>, <span class="dv">10</span>, <span class="dv">11</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>deck <span class="ot">&lt;-</span> <span class="fu">rep</span>(one_suit, <span class="at">times =</span> <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="handsumme-berechnen" class="level3">
+<h3 class="anchored" data-anchor-id="handsumme-berechnen">3.2 Handsumme berechnen</h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code anzeigen</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Ass = 11, wird zu 1 umgerechnet wenn Bust (Summe &gt; 21)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>calculate_sum <span class="ot">&lt;-</span> <span class="cf">function</span>(hand) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  total <span class="ot">&lt;-</span> <span class="fu">sum</span>(hand)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  aces  <span class="ot">&lt;-</span> <span class="fu">sum</span>(hand <span class="sc">==</span> <span class="dv">11</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (total <span class="sc">&gt;</span> <span class="dv">21</span> <span class="sc">&amp;&amp;</span> aces <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    total <span class="ot">&lt;-</span> total <span class="sc">-</span> <span class="dv">10</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    aces  <span class="ot">&lt;-</span> aces <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  total</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="eine-runde-spielen" class="level3">
+<h3 class="anchored" data-anchor-id="eine-runde-spielen">3.3 Eine Runde spielen</h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code anzeigen</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Simuliert eine Blackjack-Runde</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Gibt 1 (Gewinn) oder 0 (Nicht-Gewinn) zurück — Bernoulli-Versuch</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Unentschieden zählt als Nicht-Gewinn (0)</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>play_round <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">strategy =</span> <span class="st">"basic"</span>) {</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  shuffled    <span class="ot">&lt;-</span> <span class="fu">sample</span>(deck)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  player_hand <span class="ot">&lt;-</span> shuffled[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  dealer_hand <span class="ot">&lt;-</span> shuffled[<span class="dv">3</span><span class="sc">:</span><span class="dv">4</span>]</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  player_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(player_hand)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  dealer_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(dealer_hand)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (strategy <span class="sc">==</span> <span class="st">"basic"</span>) {</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Basic: hit unter 17, stand ab 17</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (player_sum <span class="sc">&lt;</span> <span class="dv">17</span>) {</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>      player_hand <span class="ot">&lt;-</span> <span class="fu">c</span>(player_hand, <span class="fu">sample</span>(deck, <span class="dv">1</span>))</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>      player_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(player_hand)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (strategy <span class="sc">==</span> <span class="st">"martingale"</span>) {</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Martingale: gleiche Hit/Stand-Logik wie Basic</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Einsatzverdopplung wird in simulate_player() gehandhabt</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (player_sum <span class="sc">&lt;</span> <span class="dv">17</span>) {</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>      player_hand <span class="ot">&lt;-</span> <span class="fu">c</span>(player_hand, <span class="fu">sample</span>(deck, <span class="dv">1</span>))</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>      player_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(player_hand)</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (strategy <span class="sc">==</span> <span class="st">"aggressive"</span>) {</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (player_sum <span class="sc">&lt;</span> <span class="dv">19</span>) {</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>      player_hand <span class="ot">&lt;-</span> <span class="fu">c</span>(player_hand, <span class="fu">sample</span>(deck, <span class="dv">1</span>))</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>      player_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(player_hand)</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (strategy <span class="sc">==</span> <span class="st">"random"</span>) {</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (player_sum <span class="sc">&lt;</span> <span class="dv">21</span>) {</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (<span class="fu">sample</span>(<span class="fu">c</span>(<span class="cn">TRUE</span>, <span class="cn">FALSE</span>), <span class="dv">1</span>)) {</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>        player_hand <span class="ot">&lt;-</span> <span class="fu">c</span>(player_hand, <span class="fu">sample</span>(deck, <span class="dv">1</span>))</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>        player_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(player_hand)</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>      } <span class="cf">else</span> <span class="cf">break</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Dealer zieht immer bis 17</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (dealer_sum <span class="sc">&lt;</span> <span class="dv">17</span>) {</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>    dealer_hand <span class="ot">&lt;-</span> <span class="fu">c</span>(dealer_hand, <span class="fu">sample</span>(deck, <span class="dv">1</span>))</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    dealer_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(dealer_hand)</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Bernoulli-Ausgang: Gewinn = 1, alles andere = 0</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (player_sum <span class="sc">&gt;</span> <span class="dv">21</span>)         <span class="fu">return</span>(<span class="dv">0</span>)</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (dealer_sum <span class="sc">&gt;</span> <span class="dv">21</span>)         <span class="fu">return</span>(<span class="dv">1</span>)</span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (player_sum <span class="sc">&gt;</span> dealer_sum) <span class="fu">return</span>(<span class="dv">1</span>)</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="dv">0</span>)</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="einen-spieler-simulieren" class="level3">
+<h3 class="anchored" data-anchor-id="einen-spieler-simulieren">3.4 Einen Spieler simulieren</h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code anzeigen</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Jeder Spieler spielt genau 200 Runden (fixe Rundenzahl)</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Martingale: Einsatz nach Verlust verdoppeln, nach Gewinn zurücksetzen</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>simulate_player <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">strategy =</span> <span class="st">"basic"</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                             <span class="at">start_capital =</span> <span class="dv">100</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                             <span class="at">bet =</span> <span class="dv">5</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                             <span class="at">n_rounds =</span> <span class="dv">200</span>) {</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  capital         <span class="ot">&lt;-</span> start_capital</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  current_bet     <span class="ot">&lt;-</span> bet</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  capital_history <span class="ot">&lt;-</span> <span class="fu">c</span>(start_capital)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  wins            <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (r <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_rounds) {</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    result <span class="ot">&lt;-</span> <span class="fu">play_round</span>(strategy)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (strategy <span class="sc">==</span> <span class="st">"martingale"</span>) {</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (result <span class="sc">==</span> <span class="dv">1</span>) {</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>        capital     <span class="ot">&lt;-</span> capital <span class="sc">+</span> current_bet</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>        current_bet <span class="ot">&lt;-</span> bet</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>        wins        <span class="ot">&lt;-</span> wins <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>      } <span class="cf">else</span> {</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>        capital     <span class="ot">&lt;-</span> capital <span class="sc">-</span> current_bet</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>        current_bet <span class="ot">&lt;-</span> current_bet <span class="sc">*</span> <span class="dv">2</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (current_bet <span class="sc">&gt;</span> capital) current_bet <span class="ot">&lt;-</span> <span class="fu">max</span>(capital, bet)</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (result <span class="sc">==</span> <span class="dv">1</span>) {</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>        capital <span class="ot">&lt;-</span> capital <span class="sc">+</span> bet</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>        wins    <span class="ot">&lt;-</span> wins <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>      } <span class="cf">else</span> {</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>        capital <span class="ot">&lt;-</span> capital <span class="sc">-</span> bet</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>    capital_history <span class="ot">&lt;-</span> <span class="fu">c</span>(capital_history, capital)</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">final_capital   =</span> capital,</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">wins            =</span> wins,</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">win_rate        =</span> wins <span class="sc">/</span> n_rounds,</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>    <span class="at">capital_history =</span> capital_history</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="monte-carlo-simulation" class="level3">
+<h3 class="anchored" data-anchor-id="monte-carlo-simulation">3.5 Monte Carlo Simulation</h3>
+<p>Wir simulieren <strong>10’000 Spieler pro Strategie</strong> — insgesamt 40’000 simulierte Spieler. Jeder spielt genau 200 Runden.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code anzeigen</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>n          <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>n_rounds   <span class="ot">&lt;-</span> <span class="dv">200</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>strategies <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"basic"</span>, <span class="st">"aggressive"</span>, <span class="st">"random"</span>, <span class="st">"martingale"</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>results    <span class="ot">&lt;-</span> <span class="fu">data.frame</span>()</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>avg_paths  <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (strat <span class="cf">in</span> strategies) {</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  final_capitals <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  win_rates      <span class="ot">&lt;-</span> <span class="fu">numeric</span>(n)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  all_paths      <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, <span class="at">nrow =</span> n, <span class="at">ncol =</span> n_rounds <span class="sc">+</span> <span class="dv">1</span>)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n) {</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    sim               <span class="ot">&lt;-</span> <span class="fu">simulate_player</span>(strat, <span class="at">n_rounds =</span> n_rounds)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    final_capitals[i] <span class="ot">&lt;-</span> sim<span class="sc">$</span>final_capital</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    win_rates[i]      <span class="ot">&lt;-</span> sim<span class="sc">$</span>win_rate</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    all_paths[i, ]    <span class="ot">&lt;-</span> sim<span class="sc">$</span>capital_history</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  avg_paths[[strat]] <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(all_paths)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  results <span class="ot">&lt;-</span> <span class="fu">rbind</span>(results, <span class="fu">data.frame</span>(</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">strategy  =</span> strat,</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">capital   =</span> final_capitals,</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">win_rate  =</span> win_rates</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<hr>
+</section>
+</section>
+<section id="ergebnisse" class="level2">
+<h2 class="anchored" data-anchor-id="ergebnisse">4. Ergebnisse</h2>
+<section id="kennzahlen" class="level3">
+<h3 class="anchored" data-anchor-id="kennzahlen">4.1 Kennzahlen</h3>
+<p>Die Resultate zeigen deutliche Unterschiede zwischen den Strategien. In unserer Simulation schneidet die Basic-Strategie insgesamt am besten ab: Sie erzielt die höchste Gewinnwahrscheinlichkeit und das höchste durchschnittliche Endkapital. Die Aggressive-Strategie bringt keinen klaren Vorteil gegenüber Basic. Die Random-Strategie zeigt erwartungsgemäss das schlechteste Ergebnis.</p>
+<p>Die Martingale-Strategie zeigt ein typisches Muster von kurzen Gewinnphasen und seltenen, aber starken Verlusten. Dadurch wirkt sie kurzfristig günstig, führt aber durch die Einsatzverdopplung oft zu hohen Verlusten.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code anzeigen</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>summary_stats <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Strategie            =</span> <span class="fu">tapply</span>(results<span class="sc">$</span>win_rate, results<span class="sc">$</span>strategy, mean) <span class="sc">|&gt;</span> <span class="fu">names</span>(),</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Ø Gewinnwahrsch. (%)"</span> <span class="ot">=</span> <span class="fu">round</span>(<span class="fu">tapply</span>(results<span class="sc">$</span>win_rate, results<span class="sc">$</span>strategy, mean) <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">1</span>),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Ø Endkapital (CHF)"</span>   <span class="ot">=</span> <span class="fu">round</span>(<span class="fu">tapply</span>(results<span class="sc">$</span>capital, results<span class="sc">$</span>strategy, mean), <span class="dv">1</span>),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Anteil &gt; 100 CHF (%)"</span> <span class="ot">=</span> <span class="fu">round</span>(<span class="fu">tapply</span>(results<span class="sc">$</span>capital <span class="sc">&gt;</span> <span class="dv">100</span>, results<span class="sc">$</span>strategy, mean) <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">1</span>),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">check.names =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="cn">NULL</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(summary_stats, <span class="at">align =</span> <span class="st">"lcccc"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 29%">
+<col style="width: 26%">
+<col style="width: 29%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Strategie</th>
+<th style="text-align: center;">Ø Gewinnwahrsch. (%)</th>
+<th style="text-align: center;">Ø Endkapital (CHF)</th>
+<th style="text-align: center;">Anteil &gt; 100 CHF (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">aggressive</td>
+<td style="text-align: center;">36.3</td>
+<td style="text-align: center;">-173.4</td>
+<td style="text-align: center;">0.0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">basic</td>
+<td style="text-align: center;">40.9</td>
+<td style="text-align: center;">-81.8</td>
+<td style="text-align: center;">0.3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">martingale</td>
+<td style="text-align: center;">41.0</td>
+<td style="text-align: center;">-146.7</td>
+<td style="text-align: center;">1.4</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">random</td>
+<td style="text-align: center;">31.5</td>
+<td style="text-align: center;">-269.5</td>
+<td style="text-align: center;">0.0</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="geschätzte-gewinnwahrscheinlichkeit-bernoulli-parameter-p" class="level3">
+<h3 class="anchored" data-anchor-id="geschätzte-gewinnwahrscheinlichkeit-bernoulli-parameter-p">4.2 Geschätzte Gewinnwahrscheinlichkeit (Bernoulli-Parameter p)</h3>
+<p>Das Balkendiagramm zeigt den geschätzten Bernoulli-Parameter <span class="math inline">\(p\)</span> pro Strategie — also den Anteil gewonnener Runden über 200 Runden.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code anzeigen</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>win_prob <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(win_rate <span class="sc">~</span> strategy, <span class="at">data =</span> results, <span class="at">FUN =</span> mean)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(win_prob, <span class="fu">aes</span>(<span class="at">x =</span> strategy, <span class="at">y =</span> win_rate <span class="sc">*</span> <span class="dv">100</span>, <span class="at">fill =</span> strategy)) <span class="sc">+</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">width =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> <span class="fu">paste0</span>(<span class="fu">round</span>(win_rate <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">1</span>), <span class="st">"%"</span>)),</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.5</span>, <span class="at">size =</span> <span class="dv">4</span>) <span class="sc">+</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title    =</span> <span class="st">"Geschätzte Gewinnwahrscheinlichkeit pro Strategie"</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Bernoulli-Parameter p: Anteil gewonnener Runden über 200 Runden"</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Strategie"</span>, <span class="at">y =</span> <span class="st">"Gewinnwahrscheinlichkeit (%)"</span>) <span class="sc">+</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="blackjack_report_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="empirische-endkapitalverteilung" class="level3">
+<h3 class="anchored" data-anchor-id="empirische-endkapitalverteilung">4.3 Empirische Endkapitalverteilung</h3>
+<p>Das Histogramm zeigt die Verteilung des Endkapitals nach 200 Runden pro Strategie. Die grüne gestrichelte Linie markiert das Startkapital von CHF 100.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code anzeigen</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(results, <span class="fu">aes</span>(<span class="at">x =</span> capital)) <span class="sc">+</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="fu">aes</span>(<span class="at">y =</span> <span class="fu">after_stat</span>(density)),</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">bins =</span> <span class="dv">30</span>, <span class="at">fill =</span> <span class="st">"steelblue"</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">100</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"darkgreen"</span>) <span class="sc">+</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>strategy, <span class="at">scales =</span> <span class="st">"free_y"</span>) <span class="sc">+</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title    =</span> <span class="st">"Empirische Endkapitalverteilung pro Strategie"</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Grüne Linie = Startkapital CHF 100"</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Endkapital (CHF)"</span>, <span class="at">y =</span> <span class="st">"Dichte"</span>) <span class="sc">+</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="blackjack_report_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="durchschnittlicher-kapitalverlauf" class="level3">
+<h3 class="anchored" data-anchor-id="durchschnittlicher-kapitalverlauf">4.4 Durchschnittlicher Kapitalverlauf</h3>
+<p>Der Plot zeigt den durchschnittlichen Kapitalverlauf über alle 10’000 Spieler pro Strategie. Dies gibt ein robusteres Bild als ein einzelner Beispielspieler.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code anzeigen</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>avg_path_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>()</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (strat <span class="cf">in</span> <span class="fu">names</span>(avg_paths)) {</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  avg_path_data <span class="ot">&lt;-</span> <span class="fu">rbind</span>(avg_path_data, <span class="fu">data.frame</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">round    =</span> <span class="dv">0</span><span class="sc">:</span>n_rounds,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">capital  =</span> avg_paths[[strat]],</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">strategy =</span> strat</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(avg_path_data, <span class="fu">aes</span>(<span class="at">x =</span> round, <span class="at">y =</span> capital, <span class="at">color =</span> strategy)) <span class="sc">+</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">100</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"gray50"</span>) <span class="sc">+</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title    =</span> <span class="st">"Durchschnittlicher Kapitalverlauf über 200 Runden"</span>,</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Gestrichelte Linie = Startkapital CHF 100 | Mittelwert über 10'000 Spieler"</span>,</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Runde"</span>, <span class="at">y =</span> <span class="st">"Durchschnittliches Kapital (CHF)"</span>) <span class="sc">+</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="blackjack_report_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+</section>
+<section id="fazit" class="level2">
+<h2 class="anchored" data-anchor-id="fazit">5. Fazit</h2>
+<p>Unsere Fragestellung war: Welche vereinfachte Blackjack-Strategie erzielt über 200 Runden die höchste Gewinnwahrscheinlichkeit? Die Simulation zeigt, dass Basic unter den betrachteten Strategien am überzeugendsten abschneidet.</p>
+<p>Trotzdem gelingt es keiner Strategie, in unserem Modell einen stabilen langfristigen Vorteil zu erzielen. Martingale kann kurzfristig günstig wirken, erhöht aber durch die Einsatzverdopplung das Verlustrisiko deutlich. Random ist als Vergleichsstrategie nützlich, weil sie zeigt, wie schlecht eine unsystematische Entscheidung im Vergleich zu einer festen Regel abschneidet.</p>
+<p>Eine wichtige Einschränkung ist, dass unser Modell bewusst vereinfacht ist: Wir abstrahieren jede Runde auf ein binäres Bernoulli-Experiment und verwenden vereinfachte Blackjack-Regeln ohne Splitten, Verdoppeln oder Versicherungen. Dadurch sind die absoluten Resultate nicht 1:1 auf ein reales Casino übertragbar, die relative Gegenüberstellung der Strategien bleibt aber als Lernmodell gut interpretierbar.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
