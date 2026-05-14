@@ -82,7 +82,7 @@ Das Endkapital nach 200 Runden wird als empirische Verteilung aus der Simulation
 ```{r}
 library(ggplot2)
 
-# Schritt 1: Deck erstellen
+# Deck aufbauen: 13 Werte × 4 Farben = 52 Karten
 one_suit <- c(2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11)
 deck <- rep(one_suit, times = 4)
 ```
@@ -90,7 +90,7 @@ deck <- rep(one_suit, times = 4)
 ### 3.2 Handsumme berechnen
 
 ```{r}
-# Ass = 11, wird zu 1 umgerechnet wenn Bust (Summe > 21)
+# Ass als 1 zählen wenn die Summe über 21 liegt
 calculate_sum <- function(hand) {
   total <- sum(hand)
   aces  <- sum(hand == 11)
@@ -105,9 +105,8 @@ calculate_sum <- function(hand) {
 ### 3.3 Eine Runde spielen
 
 ```{r}
-# Simuliert eine Blackjack-Runde
-# Gibt 1 (Gewinn) oder 0 (Nicht-Gewinn) zurück — Bernoulli-Versuch
-# Unentschieden zählt als Nicht-Gewinn (0)
+# Gibt 1 (Gewinn) oder 0 (Nicht-Gewinn) zurück
+# Unentschieden zählt als 0
 play_round <- function(strategy = "basic") {
   shuffled    <- sample(deck)
   player_hand <- shuffled[1:2]
@@ -116,14 +115,12 @@ play_round <- function(strategy = "basic") {
   dealer_sum  <- calculate_sum(dealer_hand)
 
   if (strategy == "basic") {
-    # Basic: hit unter 17, stand ab 17
     while (player_sum < 17) {
       player_hand <- c(player_hand, sample(deck, 1))
       player_sum  <- calculate_sum(player_hand)
     }
   } else if (strategy == "martingale") {
-    # Martingale: gleiche Hit/Stand-Logik wie Basic
-    # Einsatzverdopplung wird in simulate_player() gehandhabt
+    # gleiche Hit/Stand-Logik wie basic, Einsatz kommt in simulate_player()
     while (player_sum < 17) {
       player_hand <- c(player_hand, sample(deck, 1))
       player_sum  <- calculate_sum(player_hand)
@@ -142,15 +139,14 @@ play_round <- function(strategy = "basic") {
     }
   }
 
-  # Dealer zieht immer bis 17
+  # Dealer zieht bis 17
   while (dealer_sum < 17) {
     dealer_hand <- c(dealer_hand, sample(deck, 1))
     dealer_sum  <- calculate_sum(dealer_hand)
   }
 
-  # Bernoulli-Ausgang: Gewinn = 1, alles andere = 0
-  if (player_sum > 21)         return(0)
-  if (dealer_sum > 21)         return(1)
+  if (player_sum > 21)         return(0)  # Spieler bust
+  if (dealer_sum > 21)         return(1)  # Dealer bust
   if (player_sum > dealer_sum) return(1)
   return(0)
 }
@@ -159,8 +155,8 @@ play_round <- function(strategy = "basic") {
 ### 3.4 Einen Spieler simulieren
 
 ```{r}
-# Jeder Spieler spielt genau 200 Runden (fixe Rundenzahl)
-# Martingale: Einsatz nach Verlust verdoppeln, nach Gewinn zurücksetzen
+# 200 Runden pro Spieler, Kapitalverlauf wird mitgespeichert
+# Martingale: Einsatz verdoppeln nach Verlust, zurücksetzen nach Gewinn
 simulate_player <- function(strategy = "basic",
                              start_capital = 100,
                              bet = 5,
@@ -176,12 +172,12 @@ simulate_player <- function(strategy = "basic",
     if (strategy == "martingale") {
       if (result == 1) {
         capital     <- capital + current_bet
-        current_bet <- bet
+        current_bet <- bet  # zurücksetzen
         wins        <- wins + 1
       } else {
         capital     <- capital - current_bet
         current_bet <- current_bet * 2
-        if (current_bet > capital) current_bet <- max(capital, bet)
+        if (current_bet > capital) current_bet <- max(capital, bet)  # nicht ins Minus
       }
     } else {
       if (result == 1) {
@@ -228,6 +224,7 @@ for (strat in strategies) {
     all_paths[i, ]    <- sim$capital_history
   }
 
+  # Durchschnittspfad über alle 10'000 Spieler
   avg_paths[[strat]] <- colMeans(all_paths)
 
   results <- rbind(results, data.frame(
@@ -252,7 +249,7 @@ Die Martingale-Strategie zeigt ein typisches Muster von kurzen Gewinnphasen und 
 summary_stats <- data.frame(
   Strategie            = tapply(results$win_rate, results$strategy, mean) |> names(),
   "Ø Gewinnwahrsch. (%)" = round(tapply(results$win_rate, results$strategy, mean) * 100, 1),
-  "Ø Endkapital (CHF)"   = round(tapply(results$capital, results$strategy, mean), 1),
+  "Ø Endkapital (CHF)"  = round(tapply(results$capital, results$strategy, mean), 1),
   "Anteil > 100 CHF (%)" = round(tapply(results$capital > 100, results$strategy, mean) * 100, 1),
   check.names = FALSE,
   row.names = NULL

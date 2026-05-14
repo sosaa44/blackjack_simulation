@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.36">
+<meta name="generator" content="quarto-1.8.25">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -11,9 +11,6 @@
 
 <title>Blackjack Strategies as a Simplified Bernoulli Model</title>
 <style>
-/* Default styles provided by pandoc.
-** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-*/
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
 div.columns{display: flex; gap: min(4vw, 1.5em);}
@@ -66,17 +63,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="blackjack_report_files/libs/clipboard/clipboard.min.js"></script>
 <script src="blackjack_report_files/libs/quarto-html/quarto.js" type="module"></script>
 <script src="blackjack_report_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="blackjack_report_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
 <script src="blackjack_report_files/libs/quarto-html/popper.min.js"></script>
 <script src="blackjack_report_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="blackjack_report_files/libs/quarto-html/anchor.min.js"></script>
 <link href="blackjack_report_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="blackjack_report_files/libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="blackjack_report_files/libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="blackjack_report_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="blackjack_report_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="blackjack_report_files/libs/bootstrap/bootstrap-8ffd5f67044e5306d9846f29df41dda5.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="blackjack_report_files/libs/bootstrap/bootstrap-4d7f0bce1131f3e5f9547cd857cfbfc8.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -258,7 +256,7 @@ window.Quarto = {
 <summary>Code anzeigen</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Schritt 1: Deck erstellen</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Deck aufbauen: 13 Werte × 4 Farben = 52 Karten</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>one_suit <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>, <span class="dv">10</span>, <span class="dv">10</span>, <span class="dv">10</span>, <span class="dv">10</span>, <span class="dv">11</span>)</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>deck <span class="ot">&lt;-</span> <span class="fu">rep</span>(one_suit, <span class="at">times =</span> <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
@@ -269,7 +267,7 @@ window.Quarto = {
 <div class="cell">
 <details class="code-fold">
 <summary>Code anzeigen</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Ass = 11, wird zu 1 umgerechnet wenn Bust (Summe &gt; 21)</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Ass als 1 zählen wenn die Summe über 21 liegt</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>calculate_sum <span class="ot">&lt;-</span> <span class="cf">function</span>(hand) {</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  total <span class="ot">&lt;-</span> <span class="fu">sum</span>(hand)</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  aces  <span class="ot">&lt;-</span> <span class="fu">sum</span>(hand <span class="sc">==</span> <span class="dv">11</span>)</span>
@@ -287,55 +285,51 @@ window.Quarto = {
 <div class="cell">
 <details class="code-fold">
 <summary>Code anzeigen</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Simuliert eine Blackjack-Runde</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Gibt 1 (Gewinn) oder 0 (Nicht-Gewinn) zurück — Bernoulli-Versuch</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Unentschieden zählt als Nicht-Gewinn (0)</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>play_round <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">strategy =</span> <span class="st">"basic"</span>) {</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  shuffled    <span class="ot">&lt;-</span> <span class="fu">sample</span>(deck)</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  player_hand <span class="ot">&lt;-</span> shuffled[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  dealer_hand <span class="ot">&lt;-</span> shuffled[<span class="dv">3</span><span class="sc">:</span><span class="dv">4</span>]</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  player_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(player_hand)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  dealer_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(dealer_hand)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (strategy <span class="sc">==</span> <span class="st">"basic"</span>) {</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Basic: hit unter 17, stand ab 17</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (player_sum <span class="sc">&lt;</span> <span class="dv">17</span>) {</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>      player_hand <span class="ot">&lt;-</span> <span class="fu">c</span>(player_hand, <span class="fu">sample</span>(deck, <span class="dv">1</span>))</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>      player_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(player_hand)</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (strategy <span class="sc">==</span> <span class="st">"martingale"</span>) {</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Martingale: gleiche Hit/Stand-Logik wie Basic</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Einsatzverdopplung wird in simulate_player() gehandhabt</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (player_sum <span class="sc">&lt;</span> <span class="dv">17</span>) {</span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>      player_hand <span class="ot">&lt;-</span> <span class="fu">c</span>(player_hand, <span class="fu">sample</span>(deck, <span class="dv">1</span>))</span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>      player_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(player_hand)</span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (strategy <span class="sc">==</span> <span class="st">"aggressive"</span>) {</span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (player_sum <span class="sc">&lt;</span> <span class="dv">19</span>) {</span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>      player_hand <span class="ot">&lt;-</span> <span class="fu">c</span>(player_hand, <span class="fu">sample</span>(deck, <span class="dv">1</span>))</span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>      player_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(player_hand)</span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (strategy <span class="sc">==</span> <span class="st">"random"</span>) {</span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (player_sum <span class="sc">&lt;</span> <span class="dv">21</span>) {</span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (<span class="fu">sample</span>(<span class="fu">c</span>(<span class="cn">TRUE</span>, <span class="cn">FALSE</span>), <span class="dv">1</span>)) {</span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>        player_hand <span class="ot">&lt;-</span> <span class="fu">c</span>(player_hand, <span class="fu">sample</span>(deck, <span class="dv">1</span>))</span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>        player_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(player_hand)</span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>      } <span class="cf">else</span> <span class="cf">break</span></span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Dealer zieht immer bis 17</span></span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (dealer_sum <span class="sc">&lt;</span> <span class="dv">17</span>) {</span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>    dealer_hand <span class="ot">&lt;-</span> <span class="fu">c</span>(dealer_hand, <span class="fu">sample</span>(deck, <span class="dv">1</span>))</span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    dealer_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(dealer_hand)</span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Bernoulli-Ausgang: Gewinn = 1, alles andere = 0</span></span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (player_sum <span class="sc">&gt;</span> <span class="dv">21</span>)         <span class="fu">return</span>(<span class="dv">0</span>)</span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (dealer_sum <span class="sc">&gt;</span> <span class="dv">21</span>)         <span class="fu">return</span>(<span class="dv">1</span>)</span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (player_sum <span class="sc">&gt;</span> dealer_sum) <span class="fu">return</span>(<span class="dv">1</span>)</span>
-<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="dv">0</span>)</span>
-<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Gibt 1 (Gewinn) oder 0 (Nicht-Gewinn) zurück</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Unentschieden zählt als 0</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>play_round <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">strategy =</span> <span class="st">"basic"</span>) {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  shuffled    <span class="ot">&lt;-</span> <span class="fu">sample</span>(deck)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  player_hand <span class="ot">&lt;-</span> shuffled[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  dealer_hand <span class="ot">&lt;-</span> shuffled[<span class="dv">3</span><span class="sc">:</span><span class="dv">4</span>]</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  player_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(player_hand)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  dealer_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(dealer_hand)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (strategy <span class="sc">==</span> <span class="st">"basic"</span>) {</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (player_sum <span class="sc">&lt;</span> <span class="dv">17</span>) {</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>      player_hand <span class="ot">&lt;-</span> <span class="fu">c</span>(player_hand, <span class="fu">sample</span>(deck, <span class="dv">1</span>))</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>      player_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(player_hand)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (strategy <span class="sc">==</span> <span class="st">"martingale"</span>) {</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># gleiche Hit/Stand-Logik wie basic, Einsatz kommt in simulate_player()</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (player_sum <span class="sc">&lt;</span> <span class="dv">17</span>) {</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>      player_hand <span class="ot">&lt;-</span> <span class="fu">c</span>(player_hand, <span class="fu">sample</span>(deck, <span class="dv">1</span>))</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>      player_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(player_hand)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (strategy <span class="sc">==</span> <span class="st">"aggressive"</span>) {</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (player_sum <span class="sc">&lt;</span> <span class="dv">19</span>) {</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>      player_hand <span class="ot">&lt;-</span> <span class="fu">c</span>(player_hand, <span class="fu">sample</span>(deck, <span class="dv">1</span>))</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>      player_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(player_hand)</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (strategy <span class="sc">==</span> <span class="st">"random"</span>) {</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (player_sum <span class="sc">&lt;</span> <span class="dv">21</span>) {</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (<span class="fu">sample</span>(<span class="fu">c</span>(<span class="cn">TRUE</span>, <span class="cn">FALSE</span>), <span class="dv">1</span>)) {</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>        player_hand <span class="ot">&lt;-</span> <span class="fu">c</span>(player_hand, <span class="fu">sample</span>(deck, <span class="dv">1</span>))</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        player_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(player_hand)</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>      } <span class="cf">else</span> <span class="cf">break</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Dealer zieht bis 17</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>  <span class="cf">while</span> (dealer_sum <span class="sc">&lt;</span> <span class="dv">17</span>) {</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    dealer_hand <span class="ot">&lt;-</span> <span class="fu">c</span>(dealer_hand, <span class="fu">sample</span>(deck, <span class="dv">1</span>))</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    dealer_sum  <span class="ot">&lt;-</span> <span class="fu">calculate_sum</span>(dealer_hand)</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (player_sum <span class="sc">&gt;</span> <span class="dv">21</span>)         <span class="fu">return</span>(<span class="dv">0</span>)  <span class="co"># Spieler bust</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (dealer_sum <span class="sc">&gt;</span> <span class="dv">21</span>)         <span class="fu">return</span>(<span class="dv">1</span>)  <span class="co"># Dealer bust</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (player_sum <span class="sc">&gt;</span> dealer_sum) <span class="fu">return</span>(<span class="dv">1</span>)</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="dv">0</span>)</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 </section>
@@ -344,8 +338,8 @@ window.Quarto = {
 <div class="cell">
 <details class="code-fold">
 <summary>Code anzeigen</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Jeder Spieler spielt genau 200 Runden (fixe Rundenzahl)</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Martingale: Einsatz nach Verlust verdoppeln, nach Gewinn zurücksetzen</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 200 Runden pro Spieler, Kapitalverlauf wird mitgespeichert</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Martingale: Einsatz verdoppeln nach Verlust, zurücksetzen nach Gewinn</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>simulate_player <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">strategy =</span> <span class="st">"basic"</span>,</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                             <span class="at">start_capital =</span> <span class="dv">100</span>,</span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                             <span class="at">bet =</span> <span class="dv">5</span>,</span>
@@ -361,12 +355,12 @@ window.Quarto = {
 <span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (strategy <span class="sc">==</span> <span class="st">"martingale"</span>) {</span>
 <span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (result <span class="sc">==</span> <span class="dv">1</span>) {</span>
 <span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>        capital     <span class="ot">&lt;-</span> capital <span class="sc">+</span> current_bet</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>        current_bet <span class="ot">&lt;-</span> bet</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>        current_bet <span class="ot">&lt;-</span> bet  <span class="co"># zurücksetzen</span></span>
 <span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>        wins        <span class="ot">&lt;-</span> wins <span class="sc">+</span> <span class="dv">1</span></span>
 <span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>      } <span class="cf">else</span> {</span>
 <span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>        capital     <span class="ot">&lt;-</span> capital <span class="sc">-</span> current_bet</span>
 <span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>        current_bet <span class="ot">&lt;-</span> current_bet <span class="sc">*</span> <span class="dv">2</span></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (current_bet <span class="sc">&gt;</span> capital) current_bet <span class="ot">&lt;-</span> <span class="fu">max</span>(capital, bet)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (current_bet <span class="sc">&gt;</span> capital) current_bet <span class="ot">&lt;-</span> <span class="fu">max</span>(capital, bet)  <span class="co"># nicht ins Minus</span></span>
 <span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>      }</span>
 <span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
 <span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (result <span class="sc">==</span> <span class="dv">1</span>) {</span>
@@ -415,14 +409,15 @@ window.Quarto = {
 <span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    all_paths[i, ]    <span class="ot">&lt;-</span> sim<span class="sc">$</span>capital_history</span>
 <span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  }</span>
 <span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  avg_paths[[strat]] <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(all_paths)</span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  results <span class="ot">&lt;-</span> <span class="fu">rbind</span>(results, <span class="fu">data.frame</span>(</span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">strategy  =</span> strat,</span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">capital   =</span> final_capitals,</span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">win_rate  =</span> win_rates</span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>  ))</span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Durchschnittspfad über alle 10'000 Spieler</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>  avg_paths[[strat]] <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(all_paths)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  results <span class="ot">&lt;-</span> <span class="fu">rbind</span>(results, <span class="fu">data.frame</span>(</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">strategy  =</span> strat,</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">capital   =</span> final_capitals,</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">win_rate  =</span> win_rates</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <hr>
@@ -440,7 +435,7 @@ window.Quarto = {
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>summary_stats <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Strategie            =</span> <span class="fu">tapply</span>(results<span class="sc">$</span>win_rate, results<span class="sc">$</span>strategy, mean) <span class="sc">|&gt;</span> <span class="fu">names</span>(),</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Ø Gewinnwahrsch. (%)"</span> <span class="ot">=</span> <span class="fu">round</span>(<span class="fu">tapply</span>(results<span class="sc">$</span>win_rate, results<span class="sc">$</span>strategy, mean) <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">1</span>),</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Ø Endkapital (CHF)"</span>   <span class="ot">=</span> <span class="fu">round</span>(<span class="fu">tapply</span>(results<span class="sc">$</span>capital, results<span class="sc">$</span>strategy, mean), <span class="dv">1</span>),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Ø Endkapital (CHF)"</span>  <span class="ot">=</span> <span class="fu">round</span>(<span class="fu">tapply</span>(results<span class="sc">$</span>capital, results<span class="sc">$</span>strategy, mean), <span class="dv">1</span>),</span>
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Anteil &gt; 100 CHF (%)"</span> <span class="ot">=</span> <span class="fu">round</span>(<span class="fu">tapply</span>(results<span class="sc">$</span>capital <span class="sc">&gt;</span> <span class="dv">100</span>, results<span class="sc">$</span>strategy, mean) <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">1</span>),</span>
 <span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">check.names =</span> <span class="cn">FALSE</span>,</span>
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="cn">NULL</span></span>

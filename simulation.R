@@ -1,18 +1,17 @@
 # Blackjack Strategy as a Bernoulli Process
 # ZHAW — Semesterarbeit Wahrscheinlichkeitsrechnung FS26
 #
-# Research Question:
-# Which Blackjack strategy achieves the highest win probability over 200 rounds?
+# Fragestellung: Welche Strategie hat die höchste Gewinnwahrscheinlichkeit über 200 Runden?
 
 library(ggplot2)
 
-# ── Step 1: Create Deck ───────────────────────────────────────
-# 13 card values per suit (J/Q/K = 10, Ace = 11), 4 suits = 52 cards
+# Deck aufbauen: 13 Werte pro Farbe, 4 Farben = 52 Karten
+# J/Q/K zählen als 10, Ass als 11
 one_suit <- c(2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11)
 deck <- rep(one_suit, times = 4)
 
-# ── Step 2: Calculate Hand Sum ────────────────────────────────
-# Ace = 11, switches to 1 if bust
+# Handsumme berechnen
+# Ass auf 1 reduzieren wenn Bust, solange nötig
 calculate_sum <- function(hand) {
   total <- sum(hand)
   aces <- sum(hand == 11)
@@ -23,35 +22,36 @@ calculate_sum <- function(hand) {
   total
 }
 
-# ── Step 3: Play One Round ────────────────────────────────────
-# Returns 1 (win) or 0 (non-win) — Bernoulli trial
-# draw counts as non-win (0)
+# Eine Runde spielen, Ergebnis als Bernoulli-Variable zurückgeben
+# 1 = Gewinn, 0 = alles andere (Verlust oder Unentschieden)
 play_round <- function(strategy = "basic") {
   shuffled <- sample(deck)
   player_hand <- shuffled[1:2]
   dealer_hand <- shuffled[3:4]
   player_sum <- calculate_sum(player_hand)
   dealer_sum <- calculate_sum(dealer_hand)
-  
+
   if (strategy == "basic") {
-    # Basic: hit below 17, stand at 17+
+    # unter 17 ziehen, ab 17 stehen
     while (player_sum < 17) {
       player_hand <- c(player_hand, sample(deck, 1))
       player_sum <- calculate_sum(player_hand)
     }
   } else if (strategy == "martingale") {
-    # Martingale uses same hit/stand as basic
-    # bet doubling is handled in simulate_player()
+    # gleiche Hit/Stand-Logik wie basic
+    # Einsatzanpassung passiert in simulate_player()
     while (player_sum < 17) {
       player_hand <- c(player_hand, sample(deck, 1))
       player_sum <- calculate_sum(player_hand)
     }
   } else if (strategy == "aggressive") {
+    # erst ab 19 stehen
     while (player_sum < 19) {
       player_hand <- c(player_hand, sample(deck, 1))
       player_sum <- calculate_sum(player_hand)
     }
   } else if (strategy == "random") {
+    # zufällig ziehen oder stehen
     while (player_sum < 21) {
       if (sample(c(TRUE, FALSE), 1)) {
         player_hand <- c(player_hand, sample(deck, 1))
@@ -59,22 +59,22 @@ play_round <- function(strategy = "basic") {
       } else break
     }
   }
-  
+
+  # Dealer zieht immer bis 17
   while (dealer_sum < 17) {
     dealer_hand <- c(dealer_hand, sample(deck, 1))
     dealer_sum <- calculate_sum(dealer_hand)
   }
-  
-  # Bernoulli outcome: win = 1, everything else = 0
-  if (player_sum > 21) return(0)
-  if (dealer_sum > 21) return(1)
+
+  # Ergebnis auswerten
+  if (player_sum > 21) return(0)  # Spieler bust
+  if (dealer_sum > 21) return(1)  # Dealer bust
   if (player_sum > dealer_sum) return(1)
-  return(0)  # loss or draw
+  return(0)  # Verlust oder Unentschieden
 }
 
-# ── Step 4: Simulate One Player ───────────────────────────────
-# Every player plays exactly 200 rounds (fixed)
-# Martingale: same hit/stand as basic, but doubles bet after loss
+# Einen Spieler über n_rounds Runden simulieren
+# Martingale: Einsatz nach Verlust verdoppeln, nach Gewinn zurücksetzen
 simulate_player <- function(strategy = "basic",
                             start_capital = 100,
                             bet = 5,
@@ -83,20 +83,19 @@ simulate_player <- function(strategy = "basic",
   current_bet <- bet
   capital_history <- c(start_capital)
   wins <- 0
-  
+
   for (r in 1:n_rounds) {
     result <- play_round(strategy)
-    
+
     if (strategy == "martingale") {
       if (result == 1) {
         capital <- capital + current_bet
-        current_bet <- bet          # reset bet after win
+        current_bet <- bet  # Einsatz zurücksetzen
         wins <- wins + 1
       } else {
         capital <- capital - current_bet
-        current_bet <- current_bet * 2  # double bet after loss
-        # cap bet at remaining capital to avoid negative
-        if (current_bet > capital) current_bet <- max(capital, bet)
+        current_bet <- current_bet * 2  # Einsatz verdoppeln
+        if (current_bet > capital) current_bet <- max(capital, bet)  # nicht ins Minus
       }
     } else {
       if (result == 1) {
@@ -106,10 +105,10 @@ simulate_player <- function(strategy = "basic",
         capital <- capital - bet
       }
     }
-    
+
     capital_history <- c(capital_history, capital)
   }
-  
+
   list(
     final_capital   = capital,
     wins            = wins,
@@ -118,8 +117,7 @@ simulate_player <- function(strategy = "basic",
   )
 }
 
-# ── Step 5: Monte Carlo Simulation ────────────────────────────
-# 10,000 players per strategy, each plays exactly 200 rounds
+# Monte-Carlo: 10'000 Spieler pro Strategie, je 200 Runden
 set.seed(42)
 n <- 10000
 n_rounds <- 200
@@ -129,42 +127,42 @@ results <- data.frame()
 avg_paths <- list()
 
 for (strat in strategies) {
-  cat("Simulating:", strat, "\n")
+  cat("Simuliere:", strat, "\n")
   final_capitals <- numeric(n)
   win_rates      <- numeric(n)
   all_paths      <- matrix(0, nrow = n, ncol = n_rounds + 1)
-  
+
   for (i in 1:n) {
     sim <- simulate_player(strat, n_rounds = n_rounds)
     final_capitals[i] <- sim$final_capital
     win_rates[i]      <- sim$win_rate
     all_paths[i, ]    <- sim$capital_history
   }
-  
-  # Average capital path across all 10,000 players
+
+  # Durchschnittlichen Kapitalverlauf über alle Spieler berechnen
   avg_paths[[strat]] <- colMeans(all_paths)
-  
+
   results <- rbind(results, data.frame(
-    strategy  = strat,
-    capital   = final_capitals,
-    win_rate  = win_rates
+    strategy = strat,
+    capital  = final_capitals,
+    win_rate = win_rates
   ))
 }
 
-# ── Step 6: Summary Table ─────────────────────────────────────
+# Kennzahlen zusammenfassen
 summary_stats <- data.frame(
-  Strategie          = tapply(results$win_rate, results$strategy, mean) |> names(),
-  Gewinnwahrsch      = round(tapply(results$win_rate, results$strategy, mean) * 100, 1),
-  Avg_Capital        = round(tapply(results$capital, results$strategy, mean), 1),
-  Pct_above_100      = round(tapply(results$capital > 100, results$strategy, mean) * 100, 1)
+  Strategie     = tapply(results$win_rate, results$strategy, mean) |> names(),
+  Gewinnwahrsch = round(tapply(results$win_rate, results$strategy, mean) * 100, 1),
+  Avg_Capital   = round(tapply(results$capital, results$strategy, mean), 1),
+  Pct_above_100 = round(tapply(results$capital > 100, results$strategy, mean) * 100, 1)
 )
 colnames(summary_stats) <- c("Strategie", "Ø Gewinnwahrsch. (%)",
                              "Ø Endkapital (CHF)", "Anteil > 100 CHF (%)")
 print(summary_stats)
 
-# ── Step 7: Visualisations ────────────────────────────────────
+# Visualisierungen
 
-# Plot 1: Win probability per strategy (Bernoulli p estimate)
+# Plot 1: Gewinnwahrscheinlichkeit pro Strategie
 p1 <- ggplot(summary_stats, aes(x = Strategie, y = `Ø Gewinnwahrsch. (%)`, fill = Strategie)) +
   geom_col(width = 0.6) +
   geom_text(aes(label = paste0(`Ø Gewinnwahrsch. (%)`, "%")), vjust = -0.5, size = 4) +
@@ -174,7 +172,7 @@ p1 <- ggplot(summary_stats, aes(x = Strategie, y = `Ø Gewinnwahrsch. (%)`, fill
   theme_minimal() +
   theme(legend.position = "none")
 
-# Plot 2: Final capital distribution per strategy
+# Plot 2: Endkapitalverteilung pro Strategie
 p2 <- ggplot(results, aes(x = capital)) +
   geom_histogram(aes(y = after_stat(density)),
                  bins = 30, fill = "steelblue", alpha = 0.6) +
@@ -185,7 +183,7 @@ p2 <- ggplot(results, aes(x = capital)) +
        x = "Endkapital (CHF)", y = "Dichte") +
   theme_minimal()
 
-# Plot 3: Average capital path over 200 rounds
+# Plot 3: Durchschnittlicher Kapitalverlauf über 200 Runden
 avg_path_data <- data.frame()
 for (strat in names(avg_paths)) {
   avg_path_data <- rbind(avg_path_data, data.frame(

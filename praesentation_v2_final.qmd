@@ -1,0 +1,428 @@
+---
+title: "Blackjack Strategies"
+subtitle: "AS A SIMPLIFIED BERNOULLI MODEL"
+author: "Aisosa Omokaro &nbsp;·&nbsp; Thiveja Thirukumar"
+date: "2026-05-10"
+format:
+  revealjs:
+    theme: [default, casino.scss]
+    slide-number: true
+    incremental: true
+    chalkboard: false
+    toc: false
+    embed-resources: true
+    smaller: false
+    transition: fade
+    transition-speed: slow
+    code-fold: false
+    progress: true
+    footer: "ZHAW &nbsp;·&nbsp; WAHRSCHEINLICHKEITSRECHNUNG FS26"
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(ggplot2)
+library(dplyr)
+
+# ── COLOUR PALETTE ──────────────────────────────────────────────
+pal <- c(
+  basic      = "#00C8FF",
+  aggressive = "#FF8C00",
+  random     = "#FF3EA5",
+  martingale = "#00FF9C"
+)
+
+gold       <- "#D4AF37"
+gold_light <- "#F2D06B"
+gold_dim   <- "#6B5A1E"
+bg_panel   <- "#0F1520"
+bg_main    <- "#07090F"
+text_col   <- "#E8E0CC"
+text_dim   <- "#7A7060"
+
+# ── SHARED GGPLOT THEME ─────────────────────────────────────────
+theme_casino <- function(base_size = 14) {
+  theme_minimal(base_size = base_size) %+replace%
+    theme(
+      plot.background    = element_rect(fill = bg_main, colour = NA),
+      panel.background   = element_rect(fill = bg_panel, colour = NA),
+      panel.grid.major   = element_line(colour = "rgba(212,175,55,0.07)", linewidth = 0.3),
+      panel.grid.minor   = element_blank(),
+      panel.grid.major.x = element_blank(),
+      axis.text          = element_text(colour = text_dim,   family = "mono",  size = rel(0.85)),
+      axis.title         = element_text(colour = text_dim,   family = "mono",  size = rel(0.85)),
+      plot.title         = element_text(colour = gold_light, family = "serif", size = rel(1.15),
+                                        face = "bold", hjust = 0, margin = margin(b = 6)),
+      plot.subtitle      = element_text(colour = text_dim,   family = "mono",  size = rel(0.72),
+                                        hjust = 0, margin = margin(b = 14)),
+      legend.background  = element_rect(fill = bg_panel, colour = NA),
+      legend.key         = element_rect(fill = NA, colour = NA),
+      legend.text        = element_text(colour = text_col, family = "mono", size = rel(0.78)),
+      legend.title       = element_text(colour = gold_light, family = "mono", size = rel(0.78)),
+      strip.background   = element_rect(fill = bg_panel, colour = gold_dim),
+      strip.text         = element_text(colour = gold_light, family = "mono", size = rel(0.8)),
+      plot.margin        = margin(8, 8, 8, 8)
+    )
+}
+
+# Use a grid colour that R understands (not CSS rgba)
+theme_casino <- function(base_size = 14) {
+  theme_minimal(base_size = base_size) %+replace%
+    theme(
+      plot.background    = element_rect(fill = bg_main,   colour = NA),
+      panel.background   = element_rect(fill = bg_panel,  colour = NA),
+      panel.grid.major   = element_line(colour = "#1C2235", linewidth = 0.5),
+      panel.grid.minor   = element_blank(),
+      panel.grid.major.x = element_blank(),
+      axis.text          = element_text(colour = text_dim,   size = rel(0.85)),
+      axis.title         = element_text(colour = text_dim,   size = rel(0.85)),
+      plot.title         = element_text(colour = gold_light, size = rel(1.1),
+                                        face = "bold", hjust = 0, margin = margin(b = 4)),
+      plot.subtitle      = element_text(colour = text_dim,   size = rel(0.75),
+                                        hjust = 0, margin = margin(b = 12)),
+      legend.background  = element_rect(fill = bg_panel, colour = NA),
+      legend.key         = element_rect(fill = NA, colour = NA),
+      legend.text        = element_text(colour = text_col, size = rel(0.8)),
+      legend.title       = element_text(colour = gold_light, size = rel(0.8)),
+      strip.background   = element_rect(fill = "#0A0D14", colour = gold_dim),
+      strip.text         = element_text(colour = gold_light, size = rel(0.82), face = "bold"),
+      plot.margin        = margin(8, 8, 8, 8)
+    )
+}
+
+# ── SIMULATION ─────────────────────────────────────────────────
+one_suit <- c(2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11)
+deck     <- rep(one_suit, times = 4)
+
+calculate_sum <- function(hand) {
+  total <- sum(hand); aces <- sum(hand == 11)
+  while (total > 21 && aces > 0) { total <- total - 10; aces <- aces - 1 }
+  total
+}
+
+play_round <- function(strategy = "basic") {
+  shuffled     <- sample(deck)
+  player_hand  <- shuffled[1:2]; dealer_hand <- shuffled[3:4]
+  player_sum   <- calculate_sum(player_hand)
+  dealer_sum   <- calculate_sum(dealer_hand)
+  if (strategy %in% c("basic", "martingale")) {
+    while (player_sum < 17) {
+      player_hand <- c(player_hand, sample(deck, 1))
+      player_sum  <- calculate_sum(player_hand) }
+  } else if (strategy == "aggressive") {
+    while (player_sum < 19) {
+      player_hand <- c(player_hand, sample(deck, 1))
+      player_sum  <- calculate_sum(player_hand) }
+  } else if (strategy == "random") {
+    while (player_sum < 21) {
+      if (sample(c(TRUE, FALSE), 1)) {
+        player_hand <- c(player_hand, sample(deck, 1))
+        player_sum  <- calculate_sum(player_hand)
+      } else break }
+  }
+  while (dealer_sum < 17) {
+    dealer_hand <- c(dealer_hand, sample(deck, 1))
+    dealer_sum  <- calculate_sum(dealer_hand) }
+  if (player_sum > 21) return(0)
+  if (dealer_sum > 21) return(1)
+  if (player_sum > dealer_sum) return(1)
+  return(0)
+}
+
+simulate_player <- function(strategy = "basic", start_capital = 100,
+                             bet = 5, n_rounds = 200) {
+  capital <- start_capital; current_bet <- bet
+  capital_history <- c(start_capital); wins <- 0
+  for (r in 1:n_rounds) {
+    result <- play_round(strategy)
+    if (strategy == "martingale") {
+      if (result == 1) { capital <- capital + current_bet; current_bet <- bet; wins <- wins + 1
+      } else { capital <- capital - current_bet; current_bet <- current_bet * 2
+        if (current_bet > capital) current_bet <- max(capital, bet) }
+    } else {
+      if (result == 1) { capital <- capital + bet; wins <- wins + 1
+      } else { capital <- capital - bet }
+    }
+    capital_history <- c(capital_history, capital)
+  }
+  list(final_capital = capital, wins = wins,
+       win_rate = wins / n_rounds, capital_history = capital_history)
+}
+
+set.seed(42)
+n <- 10000; n_rounds <- 200
+strategies  <- c("basic", "aggressive", "random", "martingale")
+results     <- data.frame()
+avg_paths   <- list()
+
+for (strat in strategies) {
+  final_capitals <- numeric(n); win_rates <- numeric(n)
+  all_paths      <- matrix(0, nrow = n, ncol = n_rounds + 1)
+  for (i in 1:n) {
+    sim <- simulate_player(strat, n_rounds = n_rounds)
+    final_capitals[i]  <- sim$final_capital
+    win_rates[i]       <- sim$win_rate
+    all_paths[i, ]     <- sim$capital_history
+  }
+  avg_paths[[strat]] <- colMeans(all_paths)
+  results <- rbind(results, data.frame(
+    strategy = strat, capital = final_capitals, win_rate = win_rates))
+}
+
+results$strategy <- factor(results$strategy, levels = names(pal))
+```
+
+---
+
+## Fragestellung {.title-slide-content}
+
+### 01 — RESEARCH QUESTION
+
+**Welche vereinfachte Blackjack-Strategie erzielt über 200 Runden die höchste Gewinnwahrscheinlichkeit?**
+
+::: {.incremental}
+- Vergleich von **vier Strategien**: Basic, Aggressive, Random und Martingale
+- Jede Runde = **Bernoulli-artiger Versuch**: Gewinn = 1, Nicht-Gewinn = 0
+- Ziel: Strategien nach Gewinnrate, Endkapital und Kapitalverlauf vergleichen
+:::
+
+---
+
+## Modellidee
+
+### 02 — SIMPLIFIED BLACKJACK
+
+::: {.incremental}
+- Standarddeck mit **52 Karten** — Ass zählt 11, bei Bedarf 1
+- Dealer zieht immer bis mindestens **17**
+- Kein Split, kein Double Down, keine Versicherung
+- Unentschieden = **Nicht-Gewinn**
+- Startkapital **CHF 100** — Basiseinsatz **CHF 5** pro Runde
+- **10'000 Spieler** pro Strategie × **200 Runden**
+:::
+
+---
+
+## Strategien
+
+### 03 — THE FOUR STRATEGIES
+
+| Strategie | Hit-Regel | Einsatz |
+|---|---|---|
+| <span class="badge badge-basic">BASIC</span> | Hit bei Summe &lt; 17 | Konstant CHF 5 |
+| <span class="badge badge-aggressive">AGGRESSIVE</span> | Hit bei Summe &lt; 19 | Konstant CHF 5 |
+| <span class="badge badge-random">RANDOM</span> | Hit oder Stand — zufällig | Konstant CHF 5 |
+| <span class="badge badge-martingale">MARTINGALE</span> | Gleiche Regel wie Basic | Verdopplung nach Verlust |
+
+---
+
+## Verteilungen
+
+### 04 — PROBABILITY THEORY
+
+::: {.incremental}
+- **Bernoulli-Verteilung** — eine Runde: Gewinn (1) oder Nicht-Gewinn (0)
+- **Summe von Bernoulli-Versuchen** — Anzahl Gewinne in 200 Runden
+- **Empirische Verteilung** — Endkapital aus der Simulation beobachtet
+- **Monte-Carlo-Prinzip** — 10'000 Wiederholungen → Konvergenz zum Erwartungswert
+:::
+
+---
+
+## Simulationsablauf
+
+### 05 — ALGORITHM
+
+::: {.incremental}
+1. Karten mischen, Hände für Spieler und Dealer ziehen
+2. Strategie-Regel anwenden (Hit / Stand)
+3. Runde als **0 oder 1** codieren
+4. Kapital aktualisieren — bei Martingale: Einsatz anpassen
+5. Prozess für **200 Runden** wiederholen
+6. Pro Strategie **10'000-mal** simulieren
+:::
+
+---
+
+## R-Code: zentrale Idee
+
+### 06 — BERNOULLI OUTCOME
+
+```{r echo=TRUE, eval=FALSE}
+# Jede Runde wird zu einer 0/1-Zufallsvariable:
+if (player_sum > 21) return(0)   # Bust → Verlust
+if (dealer_sum > 21) return(1)   # Dealer Bust → Gewinn
+if (player_sum > dealer_sum) return(1)
+return(0)                         # Gleichstand oder Verlust
+```
+
+**Kernidee:** Volle Spiellogik — aber jedes Ergebnis wird auf binär reduziert.
+
+---
+
+## Ergebnisse — Übersicht
+
+### 07 — SUMMARY STATISTICS
+
+```{r}
+summary_stats <- data.frame(
+  Strategie              = tapply(results$win_rate, results$strategy, mean) |> names(),
+  "Ø Gewinnrate (%)"     = round(tapply(results$win_rate, results$strategy, mean) * 100, 1),
+  "Ø Endkapital (CHF)"   = round(tapply(results$capital,  results$strategy, mean), 1),
+  "Anteil > CHF 100 (%)" = round(tapply(results$capital > 100, results$strategy, mean) * 100, 1),
+  check.names = FALSE, row.names = NULL
+)
+knitr::kable(summary_stats, align = "lccc")
+```
+
+---
+
+## Grafik 1 — Gewinnwahrscheinlichkeit
+
+### 08 — ESTIMATED WIN RATE
+
+```{r fig.height=4.2}
+win_prob <- aggregate(win_rate ~ strategy, data = results, FUN = mean)
+win_prob$strategy <- factor(win_prob$strategy, levels = names(pal))
+
+ggplot(win_prob, aes(x = reorder(strategy, win_rate),
+                     y = win_rate * 100, fill = strategy)) +
+  geom_col(width = 0.55, alpha = 0.9) +
+  geom_segment(aes(xend = reorder(strategy, win_rate),
+                   y = 0, yend = win_rate * 100 - 0.3),
+               colour = "white", alpha = 0.08, linewidth = 8) +
+  geom_text(aes(label = paste0(round(win_rate * 100, 1), "%"),
+                colour = strategy),
+            hjust = -0.25, size = 5, fontface = "bold") +
+  coord_flip(clip = "off") +
+  ylim(0, max(win_prob$win_rate * 100) * 1.22) +
+  scale_fill_manual(values = pal, guide = "none") +
+  scale_colour_manual(values = pal, guide = "none") +
+  labs(
+    title    = "Geschätzte Gewinnwahrscheinlichkeit nach Strategie",
+    subtitle = "Ø über 10'000 Spieler × 200 Runden",
+    x = NULL, y = "Gewinnrate (%)"
+  ) +
+  theme_casino()
+```
+
+---
+
+## Grafik 2 — Kapitalverlauf
+
+### 09 — AVERAGE CAPITAL PATH
+
+```{r fig.height=4.2}
+avg_path_data <- data.frame()
+for (strat in names(avg_paths)) {
+  avg_path_data <- rbind(avg_path_data, data.frame(
+    round    = 0:n_rounds,
+    capital  = avg_paths[[strat]],
+    strategy = strat
+  ))
+}
+avg_path_data$strategy <- factor(avg_path_data$strategy, levels = names(pal))
+
+ggplot(avg_path_data, aes(x = round, y = capital,
+                           colour = strategy, linewidth = strategy)) +
+  geom_hline(yintercept = 100, linetype = "dashed",
+             colour = gold_dim, linewidth = 0.6) +
+  geom_line(alpha = 0.9) +
+  annotate("text", x = 202, y = 100.5, label = "CHF 100",
+           colour = gold_dim, size = 3, hjust = 0) +
+  scale_colour_manual(values = pal, name = "Strategie") +
+  scale_linewidth_manual(values = c(1.2, 1.2, 1.2, 1.8), guide = "none") +
+  labs(
+    title    = "Durchschnittlicher Kapitalverlauf über 200 Runden",
+    subtitle = "Gemittelt über 10'000 Spieler — gestrichelte Linie = Startkapital",
+    x = "Runde", y = "Ø Kapital (CHF)"
+  ) +
+  theme_casino() +
+  theme(legend.position = "top")
+```
+
+---
+
+## Grafik 3 — Endkapitalverteilung
+
+### 10 — FINAL CAPITAL DISTRIBUTION
+
+```{r fig.height=4.2}
+ggplot(results, aes(x = capital, fill = strategy)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 bins = 30, alpha = 0.85, colour = NA) +
+  geom_vline(xintercept = 100, linetype = "dashed",
+             colour = gold, linewidth = 0.8) +
+  facet_wrap(~strategy, scales = "free_y", nrow = 1) +
+  scale_fill_manual(values = pal, guide = "none") +
+  labs(
+    title    = "Verteilung des Endkapitals pro Strategie",
+    subtitle = "Goldene Linie = Startkapital CHF 100",
+    x = "Endkapital (CHF)", y = "Dichte"
+  ) +
+  theme_casino()
+```
+
+---
+
+## Antwort auf die Fragestellung
+
+### 11 — CONCLUSION
+
+::: {.incremental}
+- <span class="badge badge-basic">BASIC</span> ist die **robusteste Strategie** — höchstes Ø Endkapital, stabile Gewinnrate
+- <span class="badge badge-martingale">MARTINGALE</span> verbessert die Spielregel **nicht** — sie erhöht nur das Risiko
+- <span class="badge badge-random">RANDOM</span> bestätigt: **Systemlose Entscheidungen** sind klar unterlegen
+- Alle Strategien verlieren langfristig Kapital — der **Hausvorteil ist unschlagbar**
+:::
+
+---
+
+## Grenzen des Modells
+
+### 12 — LIMITATIONS
+
+::: {.incremental}
+- Bewusst **vereinfacht** — kein fortlaufendes Deck, keine Kartenabhängigkeit
+- Unentschieden = Nicht-Gewinn (vereinfacht gegenüber Casino-Regeln)
+- Kein **Blackjack-Bonus** (×1.5), kein Split, kein Double Down
+- Resultate **nicht 1:1 auf ein reales Casino übertragbar**
+:::
+
+---
+
+## Fazit
+
+### 13 — TAKEAWAY
+
+::: {.incremental}
+- Das Projekt übersetzt ein reales Spiel in ein **wahrscheinlichkeitstheoretisches Modell**
+- **40'000 simulierte Spieler**, 8 Millionen Runden — Monte-Carlo macht Muster sichtbar
+- Die Kombination aus Bernoulli-Modell, Simulation und Visualisierung beantwortet die Fragestellung klar
+:::
+
+---
+
+## {.center}
+
+::: {style="text-align:center; padding-top: 40px;"}
+
+<div style="font-family:'Cinzel',serif; font-size:2em; background:linear-gradient(135deg,#D4AF37,#F2D06B,#FFF5CC); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:16px;">
+Vielen Dank
+</div>
+
+<div style="height:1px; width:180px; background:linear-gradient(90deg,transparent,#D4AF37,transparent); margin:0 auto 20px;"></div>
+
+<div style="font-family:'Share Tech Mono',monospace; font-size:0.45em; color:#6B5A1E; letter-spacing:4px;">
+FRAGEN?
+</div>
+
+<div style="font-family:'Share Tech Mono',monospace; font-size:0.32em; color:#3A3020; margin-top:24px; letter-spacing:2px; line-height:2.2;">
+Aisosa Omokaro &nbsp;·&nbsp; Thiveja Thirukumar<br>
+ZHAW &nbsp;·&nbsp; Wahrscheinlichkeitsrechnung FS26
+</div>
+
+:::
